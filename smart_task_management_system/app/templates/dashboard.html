@@ -1,0 +1,527 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Smart Task Manager{% endblock %}
+
+{% block content %}
+<div id="dashboardRoot" class="container py-4 py-lg-5">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge rounded-pill text-bg-primary-subtle text-primary-emphasis">
+                    <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                </span>
+            </div>
+            <h1 class="display-6 fw-semibold mb-1">Task Overview</h1>
+            <p class="text-muted mb-0">Create, track and complete tasks with real-time updates.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button id="refreshTasksBtnTop" class="btn btn-outline-primary btn-saas-soft">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+        </div>
+    </div>
+
+    <div class="realtime-banner card border-0 shadow-sm mb-4 lift">
+        <div class="card-body py-3">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="realtime-dot"></span>
+                    <span class="fw-semibold">Live updates</span>
+                    <span class="text-muted small d-none d-md-inline">Instant sync on create/update/delete.</span>
+                </div>
+                <small id="lastRealtimeEvent" class="text-muted text-truncate">Waiting for events...</small>
+            </div>
+        </div>
+    </div>
+
+    <div id="analytics" class="row g-3">
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="metric-card metric-total card border-0 shadow-sm h-100 lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <p class="metric-label mb-2">Total Tasks</p>
+                            <h2 id="metricTotalTasks" class="metric-value mb-0">{{ analytics.total_tasks }}</h2>
+                        </div>
+                        <div class="metric-icon">
+                            <i class="bi bi-collection"></i>
+                        </div>
+                    </div>
+                    <div class="metric-glow"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="metric-card metric-completed card border-0 shadow-sm h-100 lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <p class="metric-label mb-2">Completed</p>
+                            <h2 id="metricCompletedTasks" class="metric-value mb-0">{{ analytics.completed_tasks }}</h2>
+                        </div>
+                        <div class="metric-icon">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                    </div>
+                    <div class="metric-glow"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="metric-card metric-pending card border-0 shadow-sm h-100 lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <p class="metric-label mb-2">Pending</p>
+                            <h2 id="metricPendingTasks" class="metric-value mb-0">{{ analytics.pending_tasks }}</h2>
+                        </div>
+                        <div class="metric-icon">
+                            <i class="bi bi-hourglass-split"></i>
+                        </div>
+                    </div>
+                    <div class="metric-glow"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="metric-card metric-percent card border-0 shadow-sm h-100 lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <p class="metric-label mb-2">Completion</p>
+                            <h2 id="metricCompletionPercentage" class="metric-value mb-0">{{ analytics.completion_percentage }}%</h2>
+                        </div>
+                        <div class="metric-icon">
+                            <i class="bi bi-graph-up-arrow"></i>
+                        </div>
+                    </div>
+                    <div class="metric-glow"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tasks" class="row g-4 mt-1">
+        <div class="col-12 col-xl-4">
+            <div class="card border-0 shadow-sm h-100 lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h2 id="taskFormTitle" class="h5 mb-0">Create Task</h2>
+                        <span class="badge rounded-pill text-bg-light text-muted">
+                            <i class="bi bi-lightning-charge me-1"></i>Fast
+                        </span>
+                    </div>
+                    <form id="taskForm" novalidate>
+                        <input type="hidden" id="taskId" value="">
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="title" maxlength="200" placeholder="Task title" required>
+                                <label for="title"><i class="bi bi-type me-1"></i>Title</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="description" rows="3" placeholder="Task description" style="height: 110px" required></textarea>
+                                <label for="description"><i class="bi bi-card-text me-1"></i>Description</label>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label for="priority" class="form-label small text-muted">Priority</label>
+                                <select id="priority" class="form-select form-select-saas" required>
+                                    <option value="Low">Low</option>
+                                    <option value="Medium" selected>Medium</option>
+                                    <option value="High">High</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="status" class="form-label small text-muted">Status</label>
+                                <select id="status" class="form-select form-select-saas" required>
+                                    <option value="Pending" selected>Pending</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" id="taskSubmitBtn" class="btn btn-primary flex-grow-1 btn-saas">
+                                <i class="bi bi-plus-circle me-2"></i>Add Task
+                            </button>
+                            <button type="button" id="taskCancelBtn" class="btn btn-outline-secondary d-none">
+                                <i class="bi bi-x-circle me-1"></i>Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-8">
+            <div class="card border-0 shadow-sm lift">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <div>
+                            <h2 class="h5 mb-0">Tasks</h2>
+                            <div class="text-muted small">Manage your tasks with quick actions.</div>
+                        </div>
+                        <button id="refreshTasksBtn" class="btn btn-sm btn-outline-primary btn-saas-soft">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-saas align-middle mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Description</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Created Date</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="taskTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-5">
+                                        <div class="d-flex flex-column align-items-center gap-2">
+                                            <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+                                            <div>Loading tasks…</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteConfirmModalLabel"><i class="bi bi-trash3 me-2 text-danger"></i>Delete task?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        This action cannot be undone. The selected task will be permanently removed.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn"><i class="bi bi-trash3 me-1"></i>Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const socket = io();
+    const lastRealtimeEvent = document.getElementById("lastRealtimeEvent");
+    const taskForm = document.getElementById("taskForm");
+    const taskFormTitle = document.getElementById("taskFormTitle");
+    const taskIdInput = document.getElementById("taskId");
+    const titleInput = document.getElementById("title");
+    const descriptionInput = document.getElementById("description");
+    const priorityInput = document.getElementById("priority");
+    const statusInput = document.getElementById("status");
+    const taskSubmitBtn = document.getElementById("taskSubmitBtn");
+    const taskCancelBtn = document.getElementById("taskCancelBtn");
+    const taskTableBody = document.getElementById("taskTableBody");
+    const refreshTasksBtn = document.getElementById("refreshTasksBtn");
+    const refreshTasksBtnTop = document.getElementById("refreshTasksBtnTop");
+    const metricTotalTasks = document.getElementById("metricTotalTasks");
+    const metricCompletedTasks = document.getElementById("metricCompletedTasks");
+    const metricPendingTasks = document.getElementById("metricPendingTasks");
+    const metricCompletionPercentage = document.getElementById("metricCompletionPercentage");
+    const dashboardRoot = document.getElementById("dashboardRoot");
+    const taskCache = new Map();
+    const toastContainer = document.getElementById("toastContainer");
+    const deleteConfirmModalEl = document.getElementById("deleteConfirmModal");
+    const deleteConfirmModal = deleteConfirmModalEl ? new bootstrap.Modal(deleteConfirmModalEl) : null;
+    const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+    let pendingDeleteTaskId = null;
+
+    function setRealtimeMessage(message) {
+        const now = new Date().toLocaleTimeString();
+        lastRealtimeEvent.textContent = `${message} (${now})`;
+    }
+
+    function showToast(message, isError = false) {
+        if (!toastContainer) return;
+        const toastEl = document.createElement("div");
+        toastEl.className = `toast align-items-center border-0 ${isError ? "text-bg-danger" : "text-bg-success"}`;
+        toastEl.setAttribute("role", "alert");
+        toastEl.setAttribute("aria-live", "assertive");
+        toastEl.setAttribute("aria-atomic", "true");
+        toastEl.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi ${isError ? "bi-exclamation-triangle" : "bi-check-circle"} me-2"></i>
+                    ${escapeHtml(message)}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        toastContainer.appendChild(toastEl);
+        const toast = bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 2600 });
+        toast.show();
+        toastEl.addEventListener("hidden.bs.toast", () => toastEl.remove());
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function priorityBadge(priority) {
+        if (priority === "High") return "bg-danger-subtle text-danger-emphasis";
+        if (priority === "Medium") return "bg-warning-subtle text-warning-emphasis";
+        return "bg-success-subtle text-success-emphasis";
+    }
+
+    function statusBadge(status) {
+        if (status === "Completed") return "bg-success-subtle text-success-emphasis";
+        if (status === "In Progress") return "bg-primary-subtle text-primary-emphasis";
+        return "bg-secondary-subtle text-secondary-emphasis";
+    }
+
+    function formatDate(isoDate) {
+        if (!isoDate) return "-";
+        const date = new Date(isoDate);
+        return date.toLocaleString();
+    }
+
+    function resetTaskForm() {
+        taskIdInput.value = "";
+        taskFormTitle.textContent = "Create Task";
+        taskSubmitBtn.innerHTML = '<i class="bi bi-plus-circle me-2"></i>Add Task';
+        taskCancelBtn.classList.add("d-none");
+        taskForm.reset();
+        priorityInput.value = "Medium";
+        statusInput.value = "Pending";
+    }
+
+    function setEditMode(task) {
+        taskIdInput.value = task.id;
+        taskFormTitle.textContent = "Edit Task";
+        taskSubmitBtn.innerHTML = '<i class="bi bi-save2 me-2"></i>Update Task';
+        taskCancelBtn.classList.remove("d-none");
+        titleInput.value = task.title;
+        descriptionInput.value = task.description;
+        priorityInput.value = task.priority;
+        statusInput.value = task.status;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function renderTasks(tasks) {
+        taskCache.clear();
+        tasks.forEach((task) => taskCache.set(String(task.id), task));
+
+        if (!tasks.length) {
+            taskTableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="empty-state mx-auto">
+                            <div class="empty-state-icon mb-3"><i class="bi bi-inbox"></i></div>
+                            <div class="fw-semibold">No tasks found</div>
+                            <div class="text-muted small mb-3">Create your first task to get started.</div>
+                            <button class="btn btn-primary btn-saas" type="button" id="emptyStateCta">
+                                <i class="bi bi-plus-circle me-2"></i>Create Task
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            const emptyStateCta = document.getElementById("emptyStateCta");
+            if (emptyStateCta) {
+                emptyStateCta.addEventListener("click", () => {
+                    titleInput.focus();
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                });
+            }
+            return;
+        }
+
+        taskTableBody.innerHTML = tasks.map((task) => `
+            <tr>
+                <td class="fw-semibold">${escapeHtml(task.title)}</td>
+                <td class="task-description">${escapeHtml(task.description)}</td>
+                <td><span class="badge rounded-pill ${priorityBadge(task.priority)}">${escapeHtml(task.priority)}</span></td>
+                <td><span class="badge rounded-pill ${statusBadge(task.status)}">${escapeHtml(task.status)}</span></td>
+                <td>${formatDate(task.created_date)}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary btn-icon me-2" data-action="edit" data-id="${task.id}" title="Edit">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger btn-icon" data-action="delete" data-id="${task.id}" title="Delete">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join("");
+    }
+
+    async function loadTasks() {
+        const response = await fetch("/api/tasks");
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Unable to load tasks.");
+        }
+        renderTasks(data.tasks);
+    }
+
+    async function loadAnalytics() {
+        const response = await fetch("/api/analytics");
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Unable to load analytics.");
+        }
+        metricTotalTasks.textContent = data.analytics.total_tasks;
+        metricCompletedTasks.textContent = data.analytics.completed_tasks;
+        metricPendingTasks.textContent = data.analytics.pending_tasks;
+        metricCompletionPercentage.textContent = `${data.analytics.completion_percentage}%`;
+    }
+
+    async function refreshDashboardData() {
+        await Promise.all([loadTasks(), loadAnalytics()]);
+    }
+
+    async function createTask(payload) {
+        const response = await fetch("/api/tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Unable to create task.");
+        }
+        showToast(data.message || "Task created.");
+        resetTaskForm();
+        await refreshDashboardData();
+    }
+
+    async function updateTask(taskId, payload) {
+        const response = await fetch(`/api/tasks/${taskId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Unable to update task.");
+        }
+        showToast(data.message || "Task updated.");
+        resetTaskForm();
+        await refreshDashboardData();
+    }
+
+    async function deleteTask(taskId) {
+        const response = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Unable to delete task.");
+        }
+        showToast(data.message || "Task deleted.");
+        await refreshDashboardData();
+    }
+
+    taskForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const payload = {
+            title: titleInput.value.trim(),
+            description: descriptionInput.value.trim(),
+            priority: priorityInput.value,
+            status: statusInput.value,
+        };
+
+        if (!payload.title || !payload.description) {
+            showToast("Title and description are required.", true);
+            return;
+        }
+
+        try {
+            if (taskIdInput.value) {
+                await updateTask(taskIdInput.value, payload);
+            } else {
+                await createTask(payload);
+            }
+        } catch (error) {
+            showToast(error.message, true);
+        }
+    });
+
+    taskCancelBtn.addEventListener("click", resetTaskForm);
+    refreshTasksBtn.addEventListener("click", async () => {
+        try {
+            await refreshDashboardData();
+            showToast("Dashboard refreshed.");
+        } catch (error) {
+            showToast(error.message, true);
+        }
+    });
+    if (refreshTasksBtnTop) {
+        refreshTasksBtnTop.addEventListener("click", () => refreshTasksBtn.click());
+    }
+
+    taskTableBody.addEventListener("click", async (event) => {
+        const target = event.target.closest("button");
+        if (!target) return;
+        const action = target.dataset.action;
+        const taskId = target.dataset.id;
+        if (!taskId) return;
+
+        try {
+            if (action === "delete") {
+                pendingDeleteTaskId = taskId;
+                if (deleteConfirmModal) deleteConfirmModal.show();
+            } else if (action === "edit") {
+                const selectedTask = taskCache.get(String(taskId));
+                if (!selectedTask) {
+                    throw new Error("Task not found.");
+                }
+                setEditMode(selectedTask);
+            }
+        } catch (error) {
+            showToast(error.message, true);
+        }
+    });
+
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener("click", async () => {
+            if (!pendingDeleteTaskId) return;
+            try {
+                await deleteTask(pendingDeleteTaskId);
+                pendingDeleteTaskId = null;
+                if (deleteConfirmModal) deleteConfirmModal.hide();
+            } catch (error) {
+                showToast(error.message, true);
+            }
+        });
+    }
+
+    socket.on("socket_connected", (payload) => {
+        setRealtimeMessage(payload?.message || "Socket connected.");
+        showToast(payload?.message || "Real-time sync connected.", false);
+    });
+
+    socket.on("task_event", (payload) => {
+        const action = payload?.action || "updated";
+        const message = payload?.message || `Task ${action}.`;
+        setRealtimeMessage(message);
+        refreshDashboardData().catch((error) => showToast(error.message, true));
+    });
+
+    refreshDashboardData().catch((error) => showToast(error.message, true));
+</script>
+{% endblock %}

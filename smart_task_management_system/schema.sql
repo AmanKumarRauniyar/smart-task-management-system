@@ -1,0 +1,18 @@
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(80) UNIQUE NOT NULL,
+    email VARCHAR(120) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL,
+    priority VARCHAR(20) NOT NULL DEFAULT 'Medium',
+    status VARCHAR(20) NOT NULL DEFAULT 'Pending',
+    created_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id);
